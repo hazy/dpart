@@ -1,0 +1,3 @@
+from dpar.methods.linear_regression import LinearRegression
+from dpar.methods.logistic_regression import LogisticRegression
+from dpar.methods.probability_tensor import ProbababilityTensor

@@ -10,15 +10,21 @@ class Sampler:
     def __init__(self, epsilon: float):
         self.epsilon = epsilon
 
+    def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
+        return X
+
+    def preprocess_y(self, y: pd.Series) -> pd.Series:
+        return y
+
     def preprocess(
         self, X: pd.DataFrame, y: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
-        return X, y
+        return self.preprocess_X(X), self.preprocess_y(y)
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         pass
 
-    def postprocess(self, y: pd.Series) -> pd.Series:
+    def postprocess_y(self, y: pd.Series) -> pd.Series:
         return y
 
     def sample(self, X: pd.DataFrame) -> pd.Series:

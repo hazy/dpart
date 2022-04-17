@@ -15,29 +15,37 @@ class LogisticRegression(CategorySampler):
         self.X_encoder = None
         self.lr = DPLR(epsilon=self.epsilon, *args, **kwargs)
 
-    def preprocess(self, X: pd.DataFrame, y: pd.Series) -> Tuple[pd.DataFrame, pd.Series]:
-        if self.label_encoder is None:
+    def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
+        if self.X_encoder is None:
             # X Processor
             self.X_encoder = SklearnEncoder()
             self.X_encoder.fit(X)
+
+        return self.X_encoder.transform(X)
+
+    def preprocess_y(self, y: pd.Series) -> pd.Series:
+        if self.label_encoder is None:
             # y Processor
             self.label_encoder = OrdinalEncoder()
-            self.label_encoder.fit(y[:, np.newaxis])
+            self.label_encoder.fit(y.to_frame())
 
-        X = self.X_encoder.transform(X)
-        y = self.label_encoder.transform(y[:, np.newaxis])[:, 0]
+        y = self.label_encoder.transform(y.to_frame()).squeeze()
 
-        return X, y
+        return pd.Series(y, index=y.index, name=y.name)
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         self.lr.fit(X, y)
 
-    def postprocess(self, y: pd.Series) -> pd.Series:
-        return self.label_encoder.inverse_transform(y)
+    def postprocess_y(self, y: pd.Series) -> pd.Series:
+        return pd.Series(
+            self.label_encoder.inverse_transform(y.to_frame()),
+            index=y.index,
+            name=y.name,
+        )
 
     def sample(self, X: pd.DataFrame) -> pd.Series:
         y_proba = self.lr.predict_proba(X)
 
         uniform_noise = np.random.uniform(size=[X.shape[0], 1])
         y = np.sum(uniform_noise > np.cumsum(y_proba, axis=1), axis=1).astype(int)
-        return y
+        return pd.Series(y, index=X.index)

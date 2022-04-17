@@ -14,16 +14,18 @@ class LinearRegression(NumericalSampler):
         self.lr = DPLR(epsilon=(self.epsilon / 2), *args, **kwargs)
         self.sigma = None
 
-    def preprocess(
-        self, X: pd.DataFrame, y: pd.Series
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
         if self.label_encoder is None:
             # X Processor
             self.X_encoder = SklearnEncoder()
             self.X_encoder.fit(X)
 
-        X = self.X_encoder.transform(X)
-        return X, y
+        return pd.DataFrame(
+            self.X_encoder.transform(X), columns=X.columns, index=X.index
+        )
+
+    def preprocess_y(self, y: pd.Series) -> pd.Series:
+        return y
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         self.lr.fit(X, y)
@@ -37,7 +39,7 @@ class LinearRegression(NumericalSampler):
         )  # laplace mechanism
         self.sigma = np.sqrt(np.sum(residuals ** 2) / normaliser) + additive_noise
 
-    def postprocess(self, y: pd.Series) -> pd.Series:
+    def postprocess_y(self, y: pd.Series) -> pd.Series:
         return y
 
     def sample(self, X: pd.DataFrame) -> pd.Series:
@@ -45,4 +47,4 @@ class LinearRegression(NumericalSampler):
             scale=self.sigma, size=X.shape[0]
         )
         # NOTE maybe clip to min/max bounds
-        return y_pred
+        return pd.Series(y_pred, index=X.index)
