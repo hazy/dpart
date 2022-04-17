@@ -88,9 +88,10 @@ class DPAR:
                 logger.warning(
                     f"target {target} has no specified method will use default {self.DEFAULT_METHOD.__name__}"
                 )
-                self.methods[target] = self.DEFAULT_METHOD(
-                    epsilon=self._epsilon / len(self.visit_order)
-                )
+                self.methods[target] = self.DEFAULT_METHOD()
+
+            if self._epsilon is not None:
+                self.methods[target].set_epsilon(self._epsilon / len(self.visit_order))
 
             logger.info(
                 f"Fit target: {target} | sampler used: {self.methods[target].__class__.__name__}"

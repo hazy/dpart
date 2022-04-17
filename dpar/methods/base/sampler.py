@@ -8,6 +8,9 @@ class Sampler:
     numerical_support: bool = True
 
     def __init__(self, epsilon: float):
+        self.set_epsilon(epsilon)
+
+    def set_epsilon(self, epsilon: float):
         self.epsilon = epsilon
 
     def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
