@@ -15,7 +15,7 @@ class LinearRegression(NumericalSampler):
         self.sigma = None
 
     def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
-        if self.label_encoder is None:
+        if self.X_encoder is None:
             # X Processor
             self.X_encoder = SklearnEncoder()
             self.X_encoder.fit(X)

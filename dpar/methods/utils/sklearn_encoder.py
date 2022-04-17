@@ -26,8 +26,12 @@ class SklearnEncoder:
         self.encoder.fit(X[self.cat_cols])
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        encoded_data = self.encoder.transform(X[self.cat_cols])
-        return X.drop(self.cat_cols, axis=1).join(encoded_data, axis=1)
+        encoded_data = pd.DataFrame(
+            self.encoder.transform(X[self.cat_cols]),
+            columns=self.cat_cols,
+            index=X.index,
+        )
+        return X.drop(self.cat_cols, axis=1).join(encoded_data)
 
     def store(self, folder: Path):
         raise NotImplementedError

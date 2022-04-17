@@ -18,13 +18,13 @@ class DPAR:
     ):
 
         # Privact budget
-        self.epsilon = epsilon
+        self._epsilon = epsilon
 
         # visit order
         self.visit_order = visit_order
 
         # method dict
-        if methods is not None:
+        if methods is None:
             methods = {}
         self.methods = methods
 
@@ -34,6 +34,7 @@ class DPAR:
         self.bounds = bounds
         self.dtypes = None
         self.root = None
+        self.columns = None
 
     def root_column(self, df: pd.DataFrame) -> str:
         root_col = "__ROOT__"
@@ -56,6 +57,7 @@ class DPAR:
     def fit(self, df: pd.DataFrame):
         # Capture dtypes
         self.dtypes = df.dtypes
+        self.columns = df.columns
         # extract visit order
         if self.visit_order is None:
             logger.info("extract visit order")
@@ -74,11 +76,8 @@ class DPAR:
 
         # reorder and introduce initial columns
         self.root = self.root_column(df)
-        t_df = (
-            self.normalise(df)
-            .reindex(columns=self.visit_order)
-            .insert(0, column=self.root, value=0)
-        )
+        t_df = self.normalise(df).reindex(columns=self.visit_order)
+        t_df.insert(0, column=self.root, value=0)
 
         # build methods
         for idx, target in enumerate(self.visit_order):
@@ -89,25 +88,33 @@ class DPAR:
                 logger.warning(
                     f"target {target} has no specified method will use default {self.DEFAULT_METHOD.__name__}"
                 )
-                self.methods[target] = self.DEFAULT_METHOD()
+                self.methods[target] = self.DEFAULT_METHOD(
+                    epsilon=self._epsilon / len(self.visit_order)
+                )
 
             logger.info(
                 f"Fit target: {target} | sampler used: {self.methods[target].__class__.__name__}"
             )
 
             t_X, t_y = self.methods[target].preprocess(X=X, y=y)
-            self.methods[target].fit(X=X, y=y)
+            self.methods[target].fit(X=t_X, y=t_y)
 
     def denormalise(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
-        for col, (lower, upper) in self.bounds.items():
-            df[col] = (df[col] * (upper - lower)) + lower
+        for col in df.columns:
+            if col in self.bounds:
+                lower, upper = self.bounds[col]
+                df[col] = (df[col] * (upper - lower)) + lower
 
+            if self.dtypes[col].kind in "ui":
+                df[col] = df[col].round().astype(self.dtypes[col])
+            else:
+                df[col] = df[col].astype(self.dtypes[col])
         return df
 
     def sample(self, n_records: int) -> pd.DataFrame:
         df = pd.DataFrame({self.root: 0}, index=np.arange(n_records))
-        for target in enumerate(self.visit_order):
+        for target in self.visit_order:
             logger.info(f"Sample target {target}")
             logger.debug(f"Sample target {target} - preprocess feature matrix")
             t_X = self.methods[target].preprocess_X(df)
@@ -119,8 +126,16 @@ class DPAR:
             df.insert(loc=df.shape[1], column=target, value=y)
 
         logger.info("denormalise sampled data")
-        i_df = self.denormalise(df=df.drop(self.root, axis=1))
-
-        logger.info("set dtypes")
-        i_df = i_df.astype(self.dtypes)
+        i_df = self.denormalise(df=df.drop(self.root, axis=1)).reindex(
+            columns=self.columns
+        )
         return i_df
+
+    @property
+    def epsilon(self):
+        budgets = [method.epsilon for _, method in self.methods.items()]
+
+        if pd.isnull(budgets).any():
+            return None
+        else:
+            return sum(budgets)

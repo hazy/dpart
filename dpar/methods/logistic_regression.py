@@ -29,16 +29,18 @@ class LogisticRegression(CategorySampler):
             self.label_encoder = OrdinalEncoder()
             self.label_encoder.fit(y.to_frame())
 
-        y = self.label_encoder.transform(y.to_frame()).squeeze()
-
-        return pd.Series(y, index=y.index, name=y.name)
+        return pd.Series(
+            self.label_encoder.transform(y.to_frame()).squeeze(),
+            index=y.index,
+            name=y.name,
+        )
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         self.lr.fit(X, y)
 
     def postprocess_y(self, y: pd.Series) -> pd.Series:
         return pd.Series(
-            self.label_encoder.inverse_transform(y.to_frame()),
+            self.label_encoder.inverse_transform(y.to_frame()).squeeze(),
             index=y.index,
             name=y.name,
         )
