@@ -9,11 +9,13 @@ from dpar.methods.utils.sklearn_encoder import SklearnEncoder
 
 
 class LogisticRegression(CategorySampler):
-    def __init__(self, epsilon=1.0, *args, **kwargs):
+    def __init__(self, epsilon=None, *args, **kwargs):
         super().__init__(epsilon=epsilon)
         self.label_encoder = None
         self.X_encoder = None
-        self.lr = DPLR(epsilon=self.epsilon, *args, **kwargs)
+        self.lr = None
+        self.args = args
+        self.kwargs = kwargs
 
     def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
         if self.X_encoder is None:
@@ -36,6 +38,7 @@ class LogisticRegression(CategorySampler):
         )
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
+        self.lr = DPLR(epsilon=self.epsilon, *self.args, **self.kwargs)
         self.lr.fit(X, y)
 
     def postprocess_y(self, y: pd.Series) -> pd.Series:

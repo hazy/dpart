@@ -1,37 +1,43 @@
 import pandas as pd
 from pathlib import Path
-from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
+from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder, MinMaxScaler
 
 
 class SklearnEncoder:
     accepted_modes = ["ordinal", "one-hot"]
 
     def __init__(self, mode="ordinal"):
-        self.cat_cols = None
         self.mode = mode
-        self.encoder = None
+        self.encoders = None
         assert (
             mode in self.accepted_modes
         ), f"mode '{mode}' not supported, only {self.accepted_modes}  are currently supported"
 
     def fit(self, X: pd.DataFrame):
-        self.cat_cols = [
-            col for col, col_data in X.items() if col_data.dtype.kind in "OSb"
-        ]
-        if self.mode == "ordinal":
-            self.encoder = OrdinalEncoder()
-        elif self.mode == "one-hot":
-            self.encoder = OneHotEncoder()
+        self.encoders = {}
+        for col, series in X.items():
+            if series.dtype.kind in "OSb":
+                if self.mode == "ordinal":
+                    self.encoders[col] = OrdinalEncoder()
+                else:
+                    self.encoders[col] = OneHotEncoder()
+            else:
+                self.encoders[col] = MinMaxScaler()
 
-        self.encoder.fit(X[self.cat_cols])
+            self.encoders[col].fit(X[[col]])
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        encoded_data = pd.DataFrame(
-            self.encoder.transform(X[self.cat_cols]),
-            columns=self.cat_cols,
+        return pd.DataFrame(
+            {
+                col: self.encoders[col].transform(series.to_frame()).squeeze()
+                for col, series in X.items()
+            },
             index=X.index,
         )
-        return X.drop(self.cat_cols, axis=1).join(encoded_data)
+
+    def fit_transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        self.fit(X)
+        return self.transform(X)
 
     def store(self, folder: Path):
         raise NotImplementedError

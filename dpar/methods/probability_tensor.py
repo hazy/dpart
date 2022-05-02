@@ -10,7 +10,7 @@ from dpar.methods.base.sampler import Sampler
 
 
 class ProbababilityTensor(Sampler):
-    def __init__(self, epsilon: float = 1.0, n_bins=100, n_parents: int = 3):
+    def __init__(self, epsilon: float = None, n_bins=100, n_parents: int = 3):
         super().__init__(epsilon=epsilon)
         self.n_bins = n_bins  # np.linspace(0, 1, n_bins + 1)
         self.X_encoders = None
@@ -48,8 +48,10 @@ class ProbababilityTensor(Sampler):
         ).reindex(columns=self.X_cols)
 
         if self.n_parents is not None:
-            self.parents = X_t.columns[-self.n_parents :]
-            X_t = X_t.iloc[:, -self.n_parents :]
+            self.parents = np.random.choice(
+                list(X_t.columns), size=min(X_t.shape[1], self.n_parents), replace=False
+            )
+            X_t = X_t[self.parents]
         else:
             self.parents = X_t.columns
         return X_t

@@ -108,7 +108,7 @@ class DPAR:
                 df[col] = (df[col] * (upper - lower)) + lower
 
             if self.dtypes[col].kind in "ui":
-                df[col] = df[col].round().astype(self.dtypes[col])
+                df[col] = df[col].round().astype(int).astype(self.dtypes[col])
             else:
                 df[col] = df[col].astype(self.dtypes[col])
         return df
