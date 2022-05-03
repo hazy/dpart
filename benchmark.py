@@ -33,7 +33,7 @@ TEST_SIZE = 0.2
 CLF = DecisionTreeClassifier
 SPLIT_SEED = 2021
 
-EPSILONS = np.logspace(-5, 5, 10)
+EPSILONS = np.logspace(-3, 6, 10)
 N_TRAIN = 5
 N_GEN = 5
 RESULTS_PATH = Path(__file__).parent / "results.csv"
