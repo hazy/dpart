@@ -8,18 +8,21 @@ from dpar.methods.utils.sklearn_encoder import SklearnEncoder
 class RegressorSampler(NumericalSampler):
     reg_class = None
 
-    def __init__(self, epsilon: float = None, *args, **kwargs):
+    def __init__(self, epsilon: float = None, one_hot: bool = False, *args, **kwargs):
         super().__init__(epsilon=epsilon)
         self.X_encoder = None
         self.sigma = None
         self.reg = None
+        self.one_hot = one_hot
         self.args = args
         self.kwargs = kwargs
 
     def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
         if self.X_encoder is None:
             # X Processor
-            self.X_encoder = SklearnEncoder()
+            self.X_encoder = SklearnEncoder(
+                mode=("one-hot" if self.one_hot else "ordinal")
+            )
             self.X_encoder.fit(X)
 
         return pd.DataFrame(

@@ -6,21 +6,24 @@ from dpar.methods.base import CategorySampler
 from dpar.methods.utils.sklearn_encoder import SklearnEncoder
 
 
-class LogisticRegression(CategorySampler):
+class ClassifierSampler(CategorySampler):
     clf_class = None
 
-    def __init__(self, epsilon=None, *args, **kwargs):
+    def __init__(self, epsilon=None, one_hot: bool = False, *args, **kwargs):
         super().__init__(epsilon=epsilon)
         self.label_encoder = None
         self.X_encoder = None
         self.clf = None
+        self.one_hot = one_hot
         self.args = args
         self.kwargs = kwargs
 
     def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
         if self.X_encoder is None:
             # X Processor
-            self.X_encoder = SklearnEncoder()
+            self.X_encoder = SklearnEncoder(
+                mode=("one-hot" if self.one_hot else "ordinal")
+            )
             self.X_encoder.fit(X)
 
         return self.X_encoder.transform(X)

@@ -1,6 +1,6 @@
-from diffprivlib.models import RandomForestClassifier as RFC
+from diffprivlib.models import LogisticRegression as DPLR
 from dpar.methods.base import ClassifierSampler
 
 
-class RandomForestClassifier(ClassifierSampler):
-    clf_class = RFC
+class LogisticRegression(ClassifierSampler):
+    clf_class = DPLR

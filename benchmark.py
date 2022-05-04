@@ -5,7 +5,7 @@ from tqdm import tqdm
 from pathlib import Path
 from logging import getLogger
 from hazy_data import datasets
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier as DTC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     accuracy_score,
@@ -16,7 +16,7 @@ from sklearn.metrics import (
 )
 
 from dpar import DPAR
-from dpar.methods import LogisticRegression, LinearRegression
+from dpar.methods import LogisticRegression, LinearRegression, RandomForestClassifier
 from dpar.methods.utils.sklearn_encoder import SklearnEncoder
 
 
@@ -30,7 +30,7 @@ LABEL = "income"
 TEST_SIZE = 0.2
 
 # Classifier Settings
-CLF = DecisionTreeClassifier
+CLF = DTC
 SPLIT_SEED = 2021
 
 EPSILONS = np.logspace(-3, 6, 10)
@@ -84,7 +84,7 @@ if __name__ == "__main__":
             for exp_idx in tqdm(range(N_TRAIN), desc="train iteration: ", leave=False):
                 dpar_model = DPAR(
                     methods={
-                        col: LogisticRegression()
+                        col: RandomForestClassifier()
                         if series.dtype.kind in "OSb"
                         else LinearRegression()
                         for col, series in train_df.items()
