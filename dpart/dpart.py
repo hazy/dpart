@@ -1,12 +1,14 @@
 import numpy as np
 import pandas as pd
 from logging import getLogger
-from dpar.methods import ProbababilityTensor
+from dpart.utils.khan import kahn_sort
+from dpart.methods import ProbababilityTensor
 
-logger = getLogger("DPAR")
+
+logger = getLogger("dpart")
 
 
-class DPAR:
+class dpart:
     DEFAULT_METHOD = ProbababilityTensor
 
     def __init__(
@@ -15,12 +17,18 @@ class DPAR:
         methods: dict = None,
         bounds: dict = None,
         epsilon: float = 1.0,
+        dependency_matrix: dict = None,
     ):
 
         # Privact budget
         self._epsilon = epsilon
 
         # visit order
+        self.dependency_matrix = dependency_matrix
+        if dependency_matrix is not None:
+            if visit_order is not None:
+                logger.warning("visit_order will be ignored as a dependency matrix has been provided")
+            visit_order = kahn_sort(dependency_matrix)
         self.visit_order = visit_order
 
         # method dict
@@ -76,12 +84,18 @@ class DPAR:
 
         # reorder and introduce initial columns
         self.root = self.root_column(df)
+        print(f"Selected root column : {self.root}")
         t_df = self.normalise(df).reindex(columns=self.visit_order)
+        print(f"Normalised data")
         t_df.insert(0, column=self.root, value=0)
 
         # build methods
         for idx, target in enumerate(self.visit_order):
-            X = t_df[t_df.columns[: idx + 1]]
+            if self.dependency_matrix is not None:
+                X_columns = self.dependency_matrix.get(target, [])
+            else:
+                X_columns = t_df.columns[: idx + 1]
+            X = t_df[X_columns]
             y = t_df[target]
 
             if target not in self.methods:
@@ -93,7 +107,7 @@ class DPAR:
             if self._epsilon is not None:
                 self.methods[target].set_epsilon(self._epsilon / len(self.visit_order))
 
-            logger.info(
+            print(
                 f"Fit target: {target} | sampler used: {self.methods[target].__class__.__name__}"
             )
 
@@ -116,9 +130,13 @@ class DPAR:
     def sample(self, n_records: int) -> pd.DataFrame:
         df = pd.DataFrame({self.root: 0}, index=np.arange(n_records))
         for target in self.visit_order:
+            if self.dependency_matrix is not None:
+                X_columns = self.dependency_matrix.get(target, [])
+            else:
+                X_columns = list(df.columns)
             logger.info(f"Sample target {target}")
             logger.debug(f"Sample target {target} - preprocess feature matrix")
-            t_X = self.methods[target].preprocess_X(df)
+            t_X = self.methods[target].preprocess_X(df[X_columns])
             logger.debug(f"Sample target {target} - Sample values")
             t_y = self.methods[target].sample(X=t_X)
             logger.debug(f"Sample target {target} - post process sampled values")

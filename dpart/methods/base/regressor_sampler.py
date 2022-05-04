@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from dpar.methods.base import NumericalSampler
-from dpar.methods.utils.sklearn_encoder import SklearnEncoder
+from dpart.methods.base import NumericalSampler
+from dpart.methods.utils.sklearn_encoder import SklearnEncoder
 
 
 class RegressorSampler(NumericalSampler):

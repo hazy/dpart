@@ -1,6 +1,6 @@
 from diffprivlib.models import RandomForestClassifier as RFC
 
-from dpar.methods.base import ClassifierSampler
+from dpart.methods.base import ClassifierSampler
 
 
 class RandomForestClassifier(ClassifierSampler):

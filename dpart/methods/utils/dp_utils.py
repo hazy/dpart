@@ -31,7 +31,7 @@ def laplace_mechanism(
     Examples
     --------
     ```
-    from dpar.methods.utils.pd_utils import laplace_mechanism
+    from dpart.methods.utils.pd_utils import laplace_mechanism
     laplace_mechanism(
         counts=[[1,2], [0, 0], [3, 5]],
         sensitivity=0.2,

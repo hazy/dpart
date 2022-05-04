@@ -15,13 +15,13 @@ from sklearn.metrics import (
     recall_score,
 )
 
-from dpar import DPAR
-from dpar.methods import LogisticRegression, LinearRegression, RandomForestClassifier
-from dpar.methods.utils.sklearn_encoder import SklearnEncoder
+from dpart import dpart
+from dpart.methods import LogisticRegression, LinearRegression, DecisionTreeClassifier
+from dpart.methods.utils.sklearn_encoder import SklearnEncoder
 
 
-logger = getLogger("DPAR")
-logger.setLevel("ERROR")
+logger = getLogger("dpart")
+logger.setLevel("INFO")
 
 
 # Data Settings
@@ -52,7 +52,7 @@ def evaluate(train, test):
     encoder = SklearnEncoder(mode="ordinal")
     t_data = encoder.fit_transform(full_data)
 
-    t_train, t_test = (t_data.iloc[: train.shape[0]], t_data.iloc[train.shape[0] :])
+    t_train, t_test = (t_data.iloc[: train.shape[0]], t_data.iloc[train.shape[0]:])
     # fit model
     clf = CLF()
     clf.fit(t_train.drop(LABEL, axis=1), t_train[LABEL])
@@ -82,16 +82,16 @@ if __name__ == "__main__":
         warnings.simplefilter("ignore")
         for epsilon in tqdm(list(EPSILONS), desc="epsilon: ", leave=True):
             for exp_idx in tqdm(range(N_TRAIN), desc="train iteration: ", leave=False):
-                dpar_model = DPAR(
+                dpart_model = dpart(
                     methods={
-                        col: RandomForestClassifier()
+                        col: LogisticRegression()  # DecisionTreeClassifier()
                         if series.dtype.kind in "OSb"
                         else LinearRegression()
                         for col, series in train_df.items()
                     },
                     epsilon=epsilon,
                 )
-                dpar_model.fit(train_df)
+                dpart_model.fit(train_df)
 
                 for gen_idx in tqdm(range(N_GEN), desc="Gen iteration: ", leave=False):
                     exp_results = {
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                         "epsilon": epsilon,
                         "gen_idx": gen_idx,
                     }
-                    synth_df = dpar_model.sample(train_df.shape[0])
+                    synth_df = dpart_model.sample(train_df.shape[0])
                     exp_scores = evaluate(synth_df, test_df)
                     exp_results.update(exp_scores)
 

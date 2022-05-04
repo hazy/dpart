@@ -3,10 +3,10 @@ import pandas as pd
 from typing import Union
 from sklearn.preprocessing import KBinsDiscretizer, OrdinalEncoder
 
-from dpar.methods.utils.dp_utils import laplace_mechanism
-from dpar.methods.utils.stats import normalise_proba, pchoice
-from dpar.methods.utils.decorators import ignore_warning
-from dpar.methods.base.sampler import Sampler
+from dpart.methods.utils.dp_utils import laplace_mechanism
+from dpart.methods.utils.stats import normalise_proba, pchoice
+from dpart.methods.utils.decorators import ignore_warning
+from dpart.methods.base.sampler import Sampler
 
 
 class ProbababilityTensor(Sampler):

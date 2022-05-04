@@ -1,4 +1,4 @@
-from dpar.methods.base.sampler import Sampler
+from dpart.methods.base.sampler import Sampler
 
 
 class NumericalSampler(Sampler):

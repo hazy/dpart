@@ -28,7 +28,7 @@ def normalise_proba(dist, conditional=False, _clip=False):
     Examples
     --------
     ```
-    from dpar.methods.utils.stats import normalise_proba
+    from dpart.methods.utils.stats import normalise_proba
     normalise_proba([.15, .49, .5])
     # array([0.13157895, 0.42982456, 0.43859649])
 

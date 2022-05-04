@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OrdinalEncoder
 
-from dpar.methods.base import CategorySampler
-from dpar.methods.utils.sklearn_encoder import SklearnEncoder
+from dpart.methods.base import CategorySampler
+from dpart.methods.utils.sklearn_encoder import SklearnEncoder
 
 
 class ClassifierSampler(CategorySampler):
