@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from logging import getLogger
-from dpart.utils.khan import kahn_sort
+from dpart.utils.kahn import kahn_sort
 from dpart.methods import ProbababilityTensor
 
 
