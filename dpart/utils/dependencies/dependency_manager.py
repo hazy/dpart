@@ -11,6 +11,8 @@ class DependencyManager():
         self.encoders = None
         self.n_parents = n_parents
         self.n_bins = n_bins
+        if prediction_matrix != "infer":
+            self.epsilon = 0
         self.epsilon = epsilon
         self.visit_order = visit_order
         self.prediction_matrix = prediction_matrix

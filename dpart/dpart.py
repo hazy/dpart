@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
-from typing import Union, Dict
 from logging import getLogger
+from typing import Union, Dict
+from collections import defaultdict
 from sklearn.preprocessing import OrdinalEncoder, MinMaxScaler
 from diffprivlib.utils import PrivacyLeakWarning
 
-from dpart.utils.kahn import kahn_sort
+from dpart.utils.dependencies import DependencyManager
 from dpart.methods import ProbabilityTensor
 
 
@@ -17,29 +18,37 @@ class dpart:
 
     def __init__(
         self,
-        visit_order: list = None,
+        # methods
         methods: dict = None,
+        # privacy settings
+        epsilon: Union[dict, float] = None,
         bounds: dict = None,
-        epsilon: Union[Dict, float] = 1.0,
+        # dependencies
+        dependency_manager=None,
+        visit_order: list = None,
         prediction_matrix: dict = None,
+        n_parents=2
     ):
 
         # Privact budget
+        if epsilon is not None:
+            if not isinstance(epsilon, dict):
+                if prediction_matrix == "infer":
+                    epsilon = {"dependency": epsilon / 2, "methods": epsilon / 2}
+                else:
+                    epsilon = {"dependency": 0, "methods": epsilon}
+        else:
+            epsilon = {
+                "dependency": None,
+                "methods": defaultdict(lambda: None)
+            }
         self._epsilon = epsilon
-        self.matrix_budget = 0
-        if prediction_matrix == "infer":
-            if epsilon is not None:
-                self.matrix_budget = self._epsilon / 2
-            else:
-                self.matrix_budget = None
-
-        # visit order
-        self.prediction_matrix = prediction_matrix
-        self.visit_order = visit_order
-
-        if prediction_matrix is not None:
-            if visit_order is not None:
-                logger.warning("visit_order will be ignored as a dependency matrix has been provided")
+        self.dep_manager = DependencyManager(
+            epsilon=self._epsilon.get("dependency", None),
+            visit_order=visit_order,
+            prediction_matrix=prediction_matrix,
+            n_parents=n_parents
+        )
 
         # method dict
         if methods is None:
@@ -88,6 +97,9 @@ class dpart:
         # Capture dtypes
         self.dtypes = df.dtypes
         self.columns = df.columns
+
+        if not isinstance(self._epsilon["methods"], dict):
+            self._epsilon["methods"] = defaultdict(lambda: self._epsilon["methods"] / df.shape[1])
         # extract visit order
         if self.visit_order is None:
             logger.info("extract visit order")
@@ -125,7 +137,7 @@ class dpart:
                 self.methods[target] = self.DEFAULT_METHOD()
 
             if self._epsilon is not None:
-                self.methods[target].set_epsilon(self._epsilon / len(self.visit_order))
+                self.methods[target].set_epsilon(self._epsilon["methods"][target])
 
             print(
                 f"Fit target: {target} | sampler used: {self.methods[target].__class__.__name__}"
