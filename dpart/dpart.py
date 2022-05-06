@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
+from typing import Union, Dict
 from logging import getLogger
+from sklearn.preprocessing import OrdinalEncoder, MinMaxScaler
+from diffprivlib.utils import PrivacyLeakWarning
+
 from dpart.utils.kahn import kahn_sort
 from dpart.methods import ProbabilityTensor
 
@@ -16,31 +20,32 @@ class dpart:
         visit_order: list = None,
         methods: dict = None,
         bounds: dict = None,
-        epsilon: float = 1.0,
-        dependency_matrix: dict = None,
+        epsilon: Union[Dict, float] = 1.0,
+        prediction_matrix: dict = None,
     ):
 
         # Privact budget
         self._epsilon = epsilon
         self.matrix_budget = 0
-        if dependency_matrix == "infer":
+        if prediction_matrix == "infer":
             if epsilon is not None:
                 self.matrix_budget = self._epsilon / 2
             else:
                 self.matrix_budget = None
 
         # visit order
-        self.dependency_matrix = dependency_matrix
-        if dependency_matrix is not None:
+        self.prediction_matrix = prediction_matrix
+        self.visit_order = visit_order
+
+        if prediction_matrix is not None:
             if visit_order is not None:
                 logger.warning("visit_order will be ignored as a dependency matrix has been provided")
-            visit_order = kahn_sort(dependency_matrix)
-        self.visit_order = visit_order
 
         # method dict
         if methods is None:
             methods = {}
         self.methods = methods
+        self.encoders = None
 
         # bound dict
         if bounds is None:
@@ -59,12 +64,23 @@ class dpart:
         return root_col
 
     def normalise(self, df: pd.DataFrame) -> pd.DataFrame:
+        self.encoders = {}
         df = df.copy()
-        for col, (lower, upper) in self.bounds.items():
-            if upper == lower:
-                df[col] = 0
+        for col, series in df.items():
+            if series.dtype.kind in "OSb":
+                t_dtype = "category"
+                if col not in self.bounds:
+                    PrivacyLeakWarning(f"List of categories not sepecified for column '{col}'")
+                    self.bounds[col] = list(series.value_counts().index)
+                self.encoders[col] = OrdinalEncoder(categories=self.bounds[col])
             else:
-                df[col] = (df[col] - lower) / (upper - lower)
+                t_dtype = "float"
+                if col not in self.bounds:
+                    PrivacyLeakWarning(f"upper and lower bounds not specified for column '{col}'")
+                    self.bounds[col] = (series.min(), series.max())
+                self.encoders[col] = MinMaxScaler(feature_range=self.bounds[col])
+
+            df[col] = pd.Series(self.encoders[col].fit_transform(df[[col]]).squeeze(), name=col, index=df.index, dtype=t_dtype)
 
         return df
 
@@ -90,15 +106,13 @@ class dpart:
 
         # reorder and introduce initial columns
         self.root = self.root_column(df)
-        print(f"Selected root column : {self.root}")
         t_df = self.normalise(df).reindex(columns=self.visit_order)
-        print(f"Normalised data")
         t_df.insert(0, column=self.root, value=0)
 
         # build methods
         for idx, target in enumerate(self.visit_order):
-            if self.dependency_matrix is not None:
-                X_columns = self.dependency_matrix.get(target, [])
+            if self.prediction_matrix is not None:
+                X_columns = self.prediction_matrix.get(target, [])
             else:
                 X_columns = t_df.columns[: idx + 1]
             X = t_df[X_columns]
@@ -123,9 +137,7 @@ class dpart:
     def denormalise(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         for col in df.columns:
-            if col in self.bounds:
-                lower, upper = self.bounds[col]
-                df[col] = (df[col] * (upper - lower)) + lower
+            df[col] = self.encoders[col].inverse_transform(df[[col]]).squeeze()
 
             if self.dtypes[col].kind in "ui":
                 df[col] = df[col].round().astype(int).astype(self.dtypes[col])
@@ -136,8 +148,8 @@ class dpart:
     def sample(self, n_records: int) -> pd.DataFrame:
         df = pd.DataFrame({self.root: 0}, index=np.arange(n_records))
         for target in self.visit_order:
-            if self.dependency_matrix is not None:
-                X_columns = self.dependency_matrix.get(target, [])
+            if self.prediction_matrix is not None:
+                X_columns = self.prediction_matrix.get(target, [])
             else:
                 X_columns = list(df.columns)
             logger.info(f"Sample target {target}")
