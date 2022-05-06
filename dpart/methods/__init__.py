@@ -1,5 +1,5 @@
 from dpart.methods.linear_regression import LinearRegression
 from dpart.methods.logistic_regression import LogisticRegression
-from dpart.methods.probability_tensor import ProbababilityTensor
+from dpart.methods.probability_tensor import ProbabilityTensor
 from dpart.methods.random_forest_classifier import RandomForestClassifier
 from dpart.methods.decision_tree_classifier import DecisionTreeClassifier

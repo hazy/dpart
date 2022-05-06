@@ -2,14 +2,14 @@ import numpy as np
 import pandas as pd
 from logging import getLogger
 from dpart.utils.kahn import kahn_sort
-from dpart.methods import ProbababilityTensor
+from dpart.methods import ProbabilityTensor
 
 
 logger = getLogger("dpart")
 
 
 class dpart:
-    DEFAULT_METHOD = ProbababilityTensor
+    DEFAULT_METHOD = ProbabilityTensor
 
     def __init__(
         self,
@@ -22,6 +22,12 @@ class dpart:
 
         # Privact budget
         self._epsilon = epsilon
+        self.matrix_budget = 0
+        if dependency_matrix == "infer":
+            if epsilon is not None:
+                self.matrix_budget = self._epsilon / 2
+            else:
+                self.matrix_budget = None
 
         # visit order
         self.dependency_matrix = dependency_matrix

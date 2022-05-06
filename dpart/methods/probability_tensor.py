@@ -9,7 +9,7 @@ from dpart.methods.utils.decorators import ignore_warning
 from dpart.methods.base.sampler import Sampler
 
 
-class ProbababilityTensor(Sampler):
+class ProbabilityTensor(Sampler):
     def __init__(self, epsilon: float = None, n_bins=100, n_parents: int = 3):
         super().__init__(epsilon=epsilon)
         self.n_bins = n_bins  # np.linspace(0, 1, n_bins + 1)
@@ -99,9 +99,12 @@ class ProbababilityTensor(Sampler):
         )
 
     def sample(self, X: pd.DataFrame) -> pd.Series:
-        dists = self.conditional_dist[
-            tuple([tuple(X[parent]) for parent in self.parents])
-        ]
+        if len(self.parents) == 0:
+            y = np.random.choice(self.conditional_dist, size=X.shape[0])
+        else:
+            dists = self.conditional_dist[
+                tuple([tuple(X[parent]) for parent in self.parents])
+            ]
 
-        y = pchoice(p=dists)
+            y = pchoice(p=dists)
         return pd.Series(y, index=X.index)
