@@ -92,7 +92,7 @@ class dpart:
         self.root = self.root_column(df)
         print(f"Selected root column : {self.root}")
         t_df = self.normalise(df).reindex(columns=self.visit_order)
-        print(f"Normalised data")
+        print("Normalised data")
         t_df.insert(0, column=self.root, value=0)
 
         # build methods
