@@ -14,7 +14,7 @@ logger = getLogger("dpart")
 
 
 class dpart:
-    DEFAULT_METHOD = ProbabilityTensor
+    default_method = ProbabilityTensor
 
     def __init__(
         self,
@@ -129,9 +129,9 @@ class dpart:
 
             if target not in self.methods:
                 logger.warning(
-                    f"target {target} has no specified method will use default {self.DEFAULT_METHOD.__name__}"
+                    f"target {target} has no specified method will use default {self.default_method.__name__}"
                 )
-                self.methods[target] = self.DEFAULT_METHOD()
+                self.methods[target] = self.default_method()
 
             if self._epsilon["methods"][target] is not None:
                 self.methods[target].set_epsilon(self._epsilon["methods"][target])
@@ -176,7 +176,7 @@ class dpart:
 
     @property
     def epsilon(self):
-        budgets = [method.epsilon for _, method in self.methods.items()]
+        budgets = [method.epsilon for _, method in self.methods.items()] + [self.dep_manager.epsilon]
 
         if pd.isnull(budgets).any():
             return None
