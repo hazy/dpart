@@ -1,5 +1,6 @@
 import pickle
 from dpart.methods.utils.sklearn_encoder import SklearnEncoder
+from dpart.methods.utils.bin_encoder import BinEncoder
 from dpart.engines import PrivBayes, Synthpop, Histogram
 from sklearn.metrics import (
     accuracy_score,
@@ -27,7 +28,7 @@ TEST_SIZE = 0.2
 CLF = DTC
 SPLIT_SEED = 2021
 
-EPSILONS = np.logspace(-3, 6, 10)
+EPSILONS = np.logspace(-3, 4, 8)
 N_TRAIN = 5
 N_GEN = 5
 RESULTS_PATH = Path(__file__).parent / "results.csv"
@@ -61,6 +62,19 @@ def evaluate(train, test):
     }
 
     return scores
+
+
+def similarity(real, synth, n_bins=100):
+    full_df = pd.concat([real, synth], axis=0)
+    scores = []
+    for col, series in full_df.items():
+        encoder = BinEncoder(n_bins=n_bins)
+        t_series = encoder.fit_transform(series)
+        t_real, t_synth = t_series.iloc[:real.shape[0]], t_series.iloc[real.shape[0]:]
+
+        score = pd.DataFrame({"real": t_real.value_counts(normalize=True), "synth": t_synth.value_counts(normalize=True)}).fillna(0).min(axis=1).sum()
+        scores.append(score)
+    return np.mean(scores)
 
 
 if __name__ == "__main__":
@@ -97,6 +111,7 @@ if __name__ == "__main__":
                         synth_df = dpart_model.sample(train_df.shape[0])
                         exp_scores = evaluate(synth_df, test_df)
                         exp_results.update(exp_scores)
+                        exp_results["similarity"] = similarity(train_df, synth_df)
 
                         results.append(exp_results)
 
