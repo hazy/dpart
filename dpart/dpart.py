@@ -80,8 +80,8 @@ class dpart:
                 t_dtype = "category"
                 if col not in self.bounds:
                     PrivacyLeakWarning(f"List of categories not sepecified for column '{col}'")
-                    self.bounds[col] = list(series.value_counts().index)
-                self.encoders[col] = OrdinalEncoder(categories=self.bounds[col])
+                    self.bounds[col] = list(series.unique())
+                self.encoders[col] = OrdinalEncoder(categories=[self.bounds[col]])
             else:
                 t_dtype = "float"
                 if col not in self.bounds:
@@ -103,12 +103,8 @@ class dpart:
         self.columns = df.columns
 
         if not isinstance(self._epsilon["methods"], dict):
-            self._epsilon["methods"] = defaultdict(lambda: self._epsilon["methods"] / df.shape[1])
-        # extract visit order
-        if self.dep_manager.visit_order is None:
-            logger.info("extract visit order")
-            self.visit_order = list(df.columns)
-            logger.debug(f"extracted visit order: {self.visit_order}")
+            total_budget = float(self._epsilon["methods"])
+            self._epsilon["methods"] = defaultdict(lambda: total_budget / df.shape[1])
 
         # extract_bounds
         for column in self.dep_manager.visit_order:
@@ -122,12 +118,12 @@ class dpart:
 
         # reorder and introduce initial columns
         self.root = self.root_column(df)
-        t_df = self.normalise(df).reindex(columns=self.visit_order)
+        t_df = self.normalise(df)
         t_df.insert(0, column=self.root, value=0)
 
         # build methods
-        for idx, target in enumerate(self.visit_order):
-            X_columns = self.dep_manager.prediction_matrix.get(target, [])
+        for idx, target in enumerate(self.dep_manager.visit_order):
+            X_columns = [self.root] + self.dep_manager.prediction_matrix.get(target, [])
             X = t_df[X_columns]
             y = t_df[target]
 
@@ -140,7 +136,7 @@ class dpart:
             if self._epsilon["methods"][target] is not None:
                 self.methods[target].set_epsilon(self._epsilon["methods"][target])
 
-            print(
+            logger.info(
                 f"Fit target: {target} | sampler used: {self.methods[target].__class__.__name__}"
             )
 
@@ -160,8 +156,8 @@ class dpart:
 
     def sample(self, n_records: int) -> pd.DataFrame:
         df = pd.DataFrame({self.root: 0}, index=np.arange(n_records))
-        for target in self.visit_order:
-            X_columns = self.dep_manager.prediction_matrix.get(target, [])
+        for target in self.dep_manager.visit_order:
+            X_columns = [self.root] + self.dep_manager.prediction_matrix.get(target, [])
             logger.info(f"Sample target {target}")
             logger.debug(f"Sample target {target} - preprocess feature matrix")
             t_X = self.methods[target].preprocess_X(df[X_columns])
