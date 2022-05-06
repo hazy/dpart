@@ -7,6 +7,7 @@ from dpart.methods.utils.sklearn_encoder import SklearnEncoder
 
 
 class ClassifierSampler(CategorySampler):
+    dp_clf_class = None
     clf_class = None
 
     def __init__(self, epsilon=None, one_hot: bool = False, *args, **kwargs):
@@ -41,7 +42,10 @@ class ClassifierSampler(CategorySampler):
         )
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
-        self.clf = self.clf_class(epsilon=self.epsilon, *self.args, **self.kwargs)
+        if self.epsilon is not None:
+            self.clf = self.dp_clf_class(epsilon=self.epsilon, *self.args, **self.kwargs)
+        else:
+            self.clf = self.clf_class(*self.args, **self.kwargs)
         self.clf.fit(X, y)
 
     def postprocess_y(self, y: pd.Series) -> pd.Series:

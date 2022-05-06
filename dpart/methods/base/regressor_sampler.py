@@ -7,6 +7,7 @@ from dpart.methods.utils.sklearn_encoder import SklearnEncoder
 
 class RegressorSampler(NumericalSampler):
     reg_class = None
+    dp_reg_class = None
 
     def __init__(self, epsilon: float = None, one_hot: bool = False, *args, **kwargs):
         super().__init__(epsilon=epsilon)
@@ -33,11 +34,17 @@ class RegressorSampler(NumericalSampler):
         return y
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
-        self.reg = self.reg_class(
-            epsilon=(self.epsilon / 2 if self.epsilon is not None else None),
-            *self.args,
-            **self.kwargs
-        )
+        if self.epsilon is not None:
+            self.reg = self.dp_reg_class(
+                epsilon=(self.epsilon / 2 if self.epsilon is not None else None),
+                *self.args,
+                **self.kwargs
+            )
+        else:
+            self.reg = self.reg_class(
+                *self.args,
+                **self.kwargs
+            )
         self.reg.fit(X, y)
         # compute sigma
         y_pred = self.reg.predict(X)
