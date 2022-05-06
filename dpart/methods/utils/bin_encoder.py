@@ -12,9 +12,9 @@ class BinEncoder():
     def fit(self, data: pd.Series):
         self.dkind = data.dtype.kind
         if self.dkind in "OSb":
-            self.encoder = KBinsDiscretizer(bins=self.n_bins, encode="ordinal")
-        else:
             self.encoder = OrdinalEncoder()
+        else:
+            self.encoder = KBinsDiscretizer(n_bins=self.n_bins, encode="ordinal")
 
         self.encoder.fit(data.to_frame())
 
