@@ -1,16 +1,17 @@
 import numpy as np
 import pandas as pd
 from typing import Union
-from sklearn.preprocessing import KBinsDiscretizer, OrdinalEncoder
+
 
 from dpart.methods.utils.dp_utils import laplace_mechanism
 from dpart.methods.utils.stats import normalise_proba, pchoice
 from dpart.methods.utils.decorators import ignore_warning
+from dpart.methods.utils.bin_encoder import BinEncoder
 from dpart.methods.base.sampler import Sampler
 
 
 class ProbabilityTensor(Sampler):
-    def __init__(self, epsilon: float = None, n_bins=100, n_parents: int = 3):
+    def __init__(self, epsilon: float = None, n_bins=20, n_parents: int = None):
         super().__init__(epsilon=epsilon)
         self.n_bins = n_bins  # np.linspace(0, 1, n_bins + 1)
         self.X_encoders = None
@@ -21,12 +22,6 @@ class ProbabilityTensor(Sampler):
         self.n_parents = n_parents
         self.parents = None
 
-    def get_encoder(self, dkind: str) -> Union[KBinsDiscretizer, OrdinalEncoder]:
-        if dkind in "fui":
-            return KBinsDiscretizer(encode="ordinal")
-        else:
-            return OrdinalEncoder()
-
     @ignore_warning
     def preprocess_X(self, X: pd.DataFrame) -> pd.DataFrame:
         if self.X_encoders is None:
@@ -35,12 +30,12 @@ class ProbabilityTensor(Sampler):
             self.X_encoders = {}
             # X Processor
             for col, series in X.items():
-                self.X_encoders[col] = self.get_encoder(dkind=series.dtype.kind)
-                self.X_encoders[col].fit(X[col].to_frame())
+                self.X_encoders[col] = BinEncoder(n_bins=self.n_bins)
+                self.X_encoders[col].fit(X[col])
 
         X_t = pd.DataFrame(
             {
-                col: self.X_encoders[col].transform(series.to_frame())[:, 0]
+                col: self.X_encoders[col].transform(series)
                 for col, series in X.items()
             },
             index=X.index,
@@ -59,15 +54,10 @@ class ProbabilityTensor(Sampler):
     @ignore_warning
     def preprocess_y(self, y: pd.Series) -> pd.Series:
         if self.y_encoder is None:
-            self.y_encoder = self.get_encoder(dkind=y.dtype.kind)
-            self.y_encoder.fit(y.to_frame())
+            self.y_encoder = BinEncoder(n_bins=self.n_bins)
+            self.y_encoder.fit(y)
 
-        y_t = pd.Series(
-            self.y_encoder.transform(y.to_frame())[:, 0],
-            index=y.index,
-            name=y.name,
-            dtype="int64",
-        )
+        y_t = self.y_encoder.transform(y)
         return y_t
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
@@ -92,11 +82,7 @@ class ProbabilityTensor(Sampler):
         )
 
     def postprocess_y(self, y: pd.Series) -> pd.Series:
-        return pd.Series(
-            self.y_encoder.inverse_transform(y.to_frame())[:, 0],
-            index=y.index,
-            name=y.name,
-        )
+        return self.y_encoder.inverse_transform(y)
 
     def sample(self, X: pd.DataFrame) -> pd.Series:
         if len(self.parents) == 0:
