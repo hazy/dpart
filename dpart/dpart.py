@@ -94,6 +94,10 @@ class dpart:
         return df
 
     def fit(self, df: pd.DataFrame):
+        # dependency manager
+        t_df = self.dep_manager.preprocess(df)
+        self.dep_manager.fit(t_df)
+
         # Capture dtypes
         self.dtypes = df.dtypes
         self.columns = df.columns
@@ -101,13 +105,13 @@ class dpart:
         if not isinstance(self._epsilon["methods"], dict):
             self._epsilon["methods"] = defaultdict(lambda: self._epsilon["methods"] / df.shape[1])
         # extract visit order
-        if self.visit_order is None:
+        if self.dep_manager.visit_order is None:
             logger.info("extract visit order")
             self.visit_order = list(df.columns)
             logger.debug(f"extracted visit order: {self.visit_order}")
 
         # extract_bounds
-        for column in self.visit_order:
+        for column in self.dep_manager.visit_order:
             if df[column].dtype.kind in "Mmfui":
                 if column not in self.bounds:
                     logger.warning(f"Bounds not provided for column {column}")
@@ -123,10 +127,7 @@ class dpart:
 
         # build methods
         for idx, target in enumerate(self.visit_order):
-            if self.prediction_matrix is not None:
-                X_columns = self.prediction_matrix.get(target, [])
-            else:
-                X_columns = t_df.columns[: idx + 1]
+            X_columns = self.dep_manager.prediction_matrix.get(target, [])
             X = t_df[X_columns]
             y = t_df[target]
 
@@ -136,7 +137,7 @@ class dpart:
                 )
                 self.methods[target] = self.DEFAULT_METHOD()
 
-            if self._epsilon is not None:
+            if self._epsilon["methods"][target] is not None:
                 self.methods[target].set_epsilon(self._epsilon["methods"][target])
 
             print(
@@ -160,10 +161,7 @@ class dpart:
     def sample(self, n_records: int) -> pd.DataFrame:
         df = pd.DataFrame({self.root: 0}, index=np.arange(n_records))
         for target in self.visit_order:
-            if self.prediction_matrix is not None:
-                X_columns = self.prediction_matrix.get(target, [])
-            else:
-                X_columns = list(df.columns)
+            X_columns = self.dep_manager.prediction_matrix.get(target, [])
             logger.info(f"Sample target {target}")
             logger.debug(f"Sample target {target} - preprocess feature matrix")
             t_X = self.methods[target].preprocess_X(df[X_columns])
