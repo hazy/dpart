@@ -9,5 +9,5 @@ class PrivBayes(dpart):
             epsilon=epsilon, prediction_matrix="infer", n_parents=n_parents
         )
 
-    def default_method(self):
+    def default_method(self, dtype):
         return ProbabilityTensor(n_parents=None, n_bins=self.n_bins)

@@ -85,7 +85,7 @@ class ProbabilityTensor(Sampler):
 
     def sample(self, X: pd.DataFrame) -> pd.Series:
         if len(self.parents) == 0:
-            y = np.random.choice(self.conditional_dist, size=X.shape[0])
+            y = np.random.choice(self.conditional_dist.shape[-1], p=self.conditional_dist, size=X.shape[0])
         else:
             dists = self.conditional_dist[
                 tuple([tuple(X[parent]) for parent in self.parents])

@@ -5,4 +5,4 @@ from dpart.methods.base import ClassifierSampler
 
 class LogisticRegression(ClassifierSampler):
     dp_clf_class = DPLR
-    dp_class = LR
+    clf_class = LR

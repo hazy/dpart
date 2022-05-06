@@ -9,5 +9,5 @@ class Histogram(dpart):
             epsilon=epsilon,
         )
 
-    def default_method(self):
+    def default_method(self, dtype):
         return ProbabilityTensor(n_parents=0, n_bins=self.n_bins)

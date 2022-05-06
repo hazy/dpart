@@ -1,12 +1,6 @@
-import warnings
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
-from pathlib import Path
-from logging import getLogger
-from hazy_data import datasets
-from sklearn.tree import DecisionTreeClassifier as DTC
-from sklearn.model_selection import train_test_split
+import pickle
+from dpart.methods.utils.sklearn_encoder import SklearnEncoder
+from dpart.engines import PrivBayes, Synthpop, Histogram
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -14,18 +8,18 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-
-from dpart import dpart
-from dpart.methods import LogisticRegression, LinearRegression, DecisionTreeClassifier
-from dpart.methods.utils.sklearn_encoder import SklearnEncoder
-
-
+from sklearn.tree import DecisionTreeClassifier as DTC
+from pathlib import Path
+from tqdm import tqdm
+import pandas as pd
+import numpy as np
+import warnings
+from logging import getLogger
 logger = getLogger("dpart")
-logger.setLevel("INFO")
+logger.setLevel("WARN")
 
-
+engines = {"priv_bayes": PrivBayes, "synth_pop": Synthpop, "histogram": Histogram}
 # Data Settings
-DATASET = "adult"
 LABEL = "income"
 TEST_SIZE = 0.2
 
@@ -39,12 +33,12 @@ N_GEN = 5
 RESULTS_PATH = Path(__file__).parent / "results.csv"
 
 
-def get_data(dataset, test_size=0.2, split_seed=None, label=None):
-    df = datasets[dataset].df
-    train_df, test_df = train_test_split(
-        df, test_size=test_size, random_state=split_seed, stratify=df[label]
-    )
-    return train_df, test_df
+def get_data():
+    train_df = pd.read_pickle("data/tiny_adult/tiny_adult.pkl.gz")
+    test_df = pd.read_pickle("data/tiny_adult/tiny_adult_test.pkl.gz")
+    with Path("data/tiny_adult/tiny_adult_bounds.pkl").open("rb") as fr:
+        bounds = pickle.load(fr)
+    return train_df, test_df, bounds
 
 
 def evaluate(train, test):
@@ -71,39 +65,40 @@ def evaluate(train, test):
 
 if __name__ == "__main__":
     results = []
-    train_df, test_df = get_data(
-        dataset=DATASET, test_size=TEST_SIZE, label=LABEL, split_seed=SPLIT_SEED
+    train_df, test_df, bounds = get_data(
     )
 
     source_results = evaluate(train_df, test_df)
-    source_results.update({"exp_idx": "source", "epsilon": None, "gen_idx": "source"})
+    source_results.update({"exp_idx": "source", "epsilon": None, "gen_idx": "source", "engine": None})
     results.append(source_results)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        for epsilon in tqdm(list(EPSILONS), desc="epsilon: ", leave=True):
-            for exp_idx in tqdm(range(N_TRAIN), desc="train iteration: ", leave=False):
-                dpart_model = dpart(
-                    methods={
-                        col: LogisticRegression()  # DecisionTreeClassifier()
-                        if series.dtype.kind in "OSb"
-                        else LinearRegression()
-                        for col, series in train_df.items()
-                    },
-                    epsilon=epsilon,
-                )
-                dpart_model.fit(train_df)
+        ebar = tqdm(list(engines.items()), desc="engine: ", leave=True)
+        for engine_name, engine in ebar:
+            ebar.set_description(f"engine : {engine_name}")
+            pbar = tqdm(list(EPSILONS), desc="epsilon: ", leave=False)
+            for epsilon in pbar:
+                for exp_idx in tqdm(range(N_TRAIN), desc="train iteration: ", leave=False):
+                    dpart_model = engine(
+                        epsilon=epsilon,
+                        bounds=bounds
+                    )
+                    dpart_model.fit(train_df)
 
-                for gen_idx in tqdm(range(N_GEN), desc="Gen iteration: ", leave=False):
-                    exp_results = {
-                        "exp_idx": exp_idx,
-                        "epsilon": epsilon,
-                        "gen_idx": gen_idx,
-                    }
-                    synth_df = dpart_model.sample(train_df.shape[0])
-                    exp_scores = evaluate(synth_df, test_df)
-                    exp_results.update(exp_scores)
+                    pbar.set_description(f"epsilon: {dpart_model.epsilon:.3f}")
 
-                    results.append(exp_results)
+                    for gen_idx in tqdm(range(N_GEN), desc="Gen iteration: ", leave=False):
+                        exp_results = {
+                            "engine": engine_name,
+                            "exp_idx": exp_idx,
+                            "epsilon": epsilon,
+                            "gen_idx": gen_idx,
+                        }
+                        synth_df = dpart_model.sample(train_df.shape[0])
+                        exp_scores = evaluate(synth_df, test_df)
+                        exp_results.update(exp_scores)
+
+                        results.append(exp_results)
 
     results_df = pd.DataFrame(results)
     results_df.to_csv(RESULTS_PATH, index=False)

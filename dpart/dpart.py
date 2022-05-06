@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import pandas as pd
 from logging import getLogger
@@ -11,10 +12,12 @@ from dpart.methods import ProbabilityTensor
 
 
 logger = getLogger("dpart")
+logger.setLevel("ERROR")
 
 
 class dpart:
-    default_method = ProbabilityTensor
+    default_numerical = ProbabilityTensor
+    default_categorical = ProbabilityTensor
 
     def __init__(
         self,
@@ -79,19 +82,23 @@ class dpart:
             if series.dtype.kind in "OSb":
                 t_dtype = "category"
                 if col not in self.bounds:
-                    PrivacyLeakWarning(f"List of categories not sepecified for column '{col}'")
-                    self.bounds[col] = list(series.unique())
-                self.encoders[col] = OrdinalEncoder(categories=[self.bounds[col]])
+                    warnings.warn(f"List of categories not sepecified for column '{col}'", PrivacyLeakWarning)
+                    self.bounds[col] = {"categories": list(series.unique())}
+                self.encoders[col] = OrdinalEncoder(categories=[self.bounds[col]["categories"]])
             else:
                 t_dtype = "float"
                 if col not in self.bounds:
                     PrivacyLeakWarning(f"upper and lower bounds not specified for column '{col}'")
-                    self.bounds[col] = (series.min(), series.max())
-                self.encoders[col] = MinMaxScaler(feature_range=self.bounds[col])
-
+                    self.bounds[col] = {"min": series.min(), "max": series.max()}
+                self.encoders[col] = MinMaxScaler(feature_range=[self.bounds[col]["min"], self.bounds[col]["max"]])
             df[col] = pd.Series(self.encoders[col].fit_transform(df[[col]]).squeeze(), name=col, index=df.index, dtype=t_dtype)
 
         return df
+
+    def default_method(self, dtype):
+        if dtype.kind in "OSb":
+            return self.default_categorical()
+        return self.default_numerical()
 
     def fit(self, df: pd.DataFrame):
         # dependency manager
@@ -106,16 +113,6 @@ class dpart:
             total_budget = float(self._epsilon["methods"])
             self._epsilon["methods"] = defaultdict(lambda: total_budget / df.shape[1])
 
-        # extract_bounds
-        for column in self.dep_manager.visit_order:
-            if df[column].dtype.kind in "Mmfui":
-                if column not in self.bounds:
-                    logger.warning(f"Bounds not provided for column {column}")
-                    self.bounds[column] = (df[column].min(), df[column].max())
-                    logger.debug(
-                        f"Extracted bounds for {column}: {self.bounds[column]}"
-                    )
-
         # reorder and introduce initial columns
         self.root = self.root_column(df)
         t_df = self.normalise(df)
@@ -128,10 +125,11 @@ class dpart:
             y = t_df[target]
 
             if target not in self.methods:
-                logger.warning(
-                    f"target {target} has no specified method will use default {self.default_method.__name__}"
+                def_method = self.default_method(self.dtypes[target])
+                warnings.warn(
+                    f"target {target} has no specified method will use default {def_method.__class__.__name__}"
                 )
-                self.methods[target] = self.default_method()
+                self.methods[target] = def_method
 
             if self._epsilon["methods"][target] is not None:
                 self.methods[target].set_epsilon(self._epsilon["methods"][target])
@@ -177,7 +175,6 @@ class dpart:
     @property
     def epsilon(self):
         budgets = [method.epsilon for _, method in self.methods.items()] + [self.dep_manager.epsilon]
-
         if pd.isnull(budgets).any():
             return None
         else:
