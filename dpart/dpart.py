@@ -82,13 +82,15 @@ class dpart:
             if series.dtype.kind in "OSb":
                 t_dtype = "category"
                 if col not in self.bounds:
-                    warnings.warn(f"List of categories not sepecified for column '{col}'", PrivacyLeakWarning)
+                    if self._epsilon.get("methods", None) is not None:
+                        warnings.warn(f"List of categories not sepecified for column '{col}'", PrivacyLeakWarning)
                     self.bounds[col] = {"categories": list(series.unique())}
                 self.encoders[col] = OrdinalEncoder(categories=[self.bounds[col]["categories"]])
             else:
                 t_dtype = "float"
                 if col not in self.bounds:
-                    PrivacyLeakWarning(f"upper and lower bounds not specified for column '{col}'")
+                    if self._epsilon.get("methods", None) is not None:
+                        PrivacyLeakWarning(f"upper and lower bounds not specified for column '{col}'")
                     self.bounds[col] = {"min": series.min(), "max": series.max()}
                 self.encoders[col] = MinMaxScaler(feature_range=[self.bounds[col]["min"], self.bounds[col]["max"]])
             df[col] = pd.Series(self.encoders[col].fit_transform(df[[col]]).squeeze(), name=col, index=df.index, dtype=t_dtype)

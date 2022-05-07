@@ -9,7 +9,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-from sklearn.tree import DecisionTreeClassifier as DTC
+from sklearn.linear_model import LogisticRegression
 from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
@@ -25,10 +25,10 @@ LABEL = "income"
 TEST_SIZE = 0.2
 
 # Classifier Settings
-CLF = DTC
+CLF = LogisticRegression
 SPLIT_SEED = 2021
 
-EPSILONS = np.logspace(-3, 4, 8)
+EPSILONS = np.logspace(-2, 3, 10)
 N_TRAIN = 5
 N_GEN = 5
 RESULTS_PATH = Path(__file__).parent / "results.csv"
@@ -64,6 +64,21 @@ def evaluate(train, test):
     return scores
 
 
+def low_baseline(train, test):
+    majority_label = train[LABEL].value_counts().idxmax()
+    y_pred = [1] * test.shape[0]
+    y_target = (test[LABEL] == majority_label).astype(int)
+
+    scores = {
+        "f1": f1_score(y_true=y_target, y_pred=y_pred),
+        "accuracy": accuracy_score(y_true=y_target, y_pred=y_pred),
+        "recall": recall_score(y_true=y_target, y_pred=y_pred),
+        "precision": precision_score(y_true=y_target, y_pred=y_pred),
+    }
+
+    return scores
+
+
 def similarity(real, synth, n_bins=100):
     full_df = pd.concat([real, synth], axis=0)
     scores = []
@@ -82,9 +97,14 @@ if __name__ == "__main__":
     train_df, test_df, bounds = get_data(
     )
 
+    low_results = low_baseline(train_df, test_df)
+    low_results.update({"exp_idx": "low_baseline", "epsilon": None, "gen_idx": "source", "engine": None})
+
     source_results = evaluate(train_df, test_df)
-    source_results.update({"exp_idx": "source", "epsilon": None, "gen_idx": "source", "engine": None})
-    results.append(source_results)
+    source_results.update({"exp_idx": "high_baseline", "epsilon": None, "gen_idx": "source", "engine": None})
+
+    results += [source_results, low_results]
+    print(results)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ebar = tqdm(list(engines.items()), desc="engine: ", leave=True)
