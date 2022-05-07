@@ -1,5 +1,6 @@
-from diffprivlib.models import RandomForestClassifier as DPRFC
 from sklearn.ensemble import RandomForestClassifier as RFC
+from diffprivlib.models import RandomForestClassifier as DPRFC
+
 from dpart.methods.base import ClassifierSampler
 
 

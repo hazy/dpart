@@ -19,7 +19,7 @@ from logging import getLogger
 logger = getLogger("dpart")
 logger.setLevel("WARN")
 
-engines = {"priv_bayes": PrivBayes, "synth_pop": Synthpop, "histogram": Histogram}
+engines = {"PrivBayes": PrivBayes, "dp-synthpop": Synthpop, "Independent": Histogram}
 # Data Settings
 LABEL = "income"
 TEST_SIZE = 0.2

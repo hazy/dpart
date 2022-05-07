@@ -1,5 +1,6 @@
-from diffprivlib.models import LogisticRegression as DPLR
 from sklearn.linear_model import LogisticRegression as LR
+from diffprivlib.models import LogisticRegression as DPLR
+
 from dpart.methods.base import ClassifierSampler
 
 

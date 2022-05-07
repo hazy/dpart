@@ -1,5 +1,5 @@
-from diffprivlib.models import LinearRegression as DPLR
 from sklearn.linear_model import LinearRegression as LR
+from diffprivlib.models import LinearRegression as DPLR
 
 from dpart.methods.base import RegressorSampler
 

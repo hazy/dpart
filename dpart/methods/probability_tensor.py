@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
 from dpart.methods.utils.dp_utils import laplace_mechanism
 from dpart.methods.utils.stats import normalise_proba, pchoice
 from dpart.methods.utils.decorators import ignore_warning

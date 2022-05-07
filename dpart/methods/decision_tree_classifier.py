@@ -1,5 +1,6 @@
-from diffprivlib.models.forest import DecisionTreeClassifier as DPDTC
 from sklearn.tree import DecisionTreeClassifier as DTC
+from diffprivlib.models.forest import DecisionTreeClassifier as DPDTC
+
 from dpart.methods.base import ClassifierSampler
 
 
