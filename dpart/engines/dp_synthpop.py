@@ -2,7 +2,7 @@ from dpart.dpart import dpart
 from dpart.methods import LogisticRegression, LinearRegression
 
 
-class Synthpop(dpart):
+class DPsynthpop(dpart):
     default_numerical = LinearRegression
     default_categorical = LogisticRegression
 

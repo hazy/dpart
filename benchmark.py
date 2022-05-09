@@ -1,7 +1,7 @@
 import pickle
 from dpart.methods.utils.sklearn_encoder import SklearnEncoder
 from dpart.methods.utils.bin_encoder import BinEncoder
-from dpart.engines import PrivBayes, Synthpop, Histogram
+from dpart.engines import Independent, PrivBayes, DPsynthpop
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -16,13 +16,15 @@ import pandas as pd
 import numpy as np
 import warnings
 from logging import getLogger
+
+
 logger = getLogger("dpart")
 logger.setLevel("WARN")
 
-engines = {"PrivBayes": PrivBayes, "dp-synthpop": Synthpop, "Independent": Histogram}
+
+engines = {"PrivBayes": PrivBayes, "dp-synthpop": DPsynthpop, "Independent": Independent}
 # Data Settings
 LABEL = "income"
-TEST_SIZE = 0.2
 
 # Classifier Settings
 CLF = LogisticRegression
@@ -104,7 +106,6 @@ if __name__ == "__main__":
     source_results.update({"exp_idx": "high_baseline", "epsilon": None, "gen_idx": "source", "engine": None})
 
     results += [source_results, low_results]
-    print(results)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ebar = tqdm(list(engines.items()), desc="engine: ", leave=True)
@@ -121,7 +122,7 @@ if __name__ == "__main__":
 
                     pbar.set_description(f"epsilon: {dpart_model.epsilon:.3f}")
 
-                    for gen_idx in tqdm(range(N_GEN), desc="Gen iteration: ", leave=False):
+                    for gen_idx in tqdm(range(N_GEN), desc="gen iteration: ", leave=False):
                         exp_results = {
                             "engine": engine_name,
                             "exp_idx": exp_idx,
