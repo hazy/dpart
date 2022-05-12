@@ -1,6 +1,8 @@
 include MANIFEST.in
 include *.md
 include setup.py
+include VERSION
+include requirements.txt
 
 exclude experiments/*
 global-exclude *.pyc

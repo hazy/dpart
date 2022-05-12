@@ -4,7 +4,6 @@ from setuptools import setup, find_packages
 with open("VERSION", "r") as f:
     version = f.read().strip()
 
-
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
@@ -21,7 +20,8 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/hazy/dpart",
-    packages=find_packages(),
+    packages=find_packages("."),
+    package_dir={"": "."},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
