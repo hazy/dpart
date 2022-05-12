@@ -1,0 +1,6 @@
+include MANIFEST.in
+include *.md
+include setup.py
+
+exclude experiments/*
+global-exclude *.pyc
