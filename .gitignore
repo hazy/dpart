@@ -131,8 +131,3 @@ dmypy.json
 
 # DS_Store
 .DS_Store
-
-
-# data
-adult.data
-adult.test
