@@ -5,7 +5,6 @@ from tempfile import TemporaryDirectory
 from DataSynthesizer.DataDescriber import DataDescriber
 from DataSynthesizer.DataGenerator import DataGenerator
 
-
 from hazy_data import datasets
 from dpart.engines import PrivBayes
 
@@ -67,4 +66,4 @@ if __name__ == "__main__":
             train_time, gen_time = baseline(train_df=train_df, bounds=bounds, epsilon=1)
             results.append({"baseline": b_name, "idx": idx, "train": train_time, "gen": gen_time})
 
-    pd.DataFrame(results).to_csv("perf.csv", index=False)
+    pd.DataFrame(results).to_csv("data/speed_results.csv", index=False)

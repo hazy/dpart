@@ -1,7 +1,11 @@
 import pickle
-from dpart.methods.utils.sklearn_encoder import SklearnEncoder
-from dpart.methods.utils.bin_encoder import BinEncoder
-from dpart.engines import Independent, PrivBayes, DPsynthpop
+import warnings
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+from pathlib import Path
+from logging import getLogger
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -9,31 +13,30 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-from sklearn.linear_model import LogisticRegression
-from pathlib import Path
-from tqdm import tqdm
-import pandas as pd
-import numpy as np
-import warnings
-from logging import getLogger
+
+from dpart.methods.utils.sklearn_encoder import SklearnEncoder
+from dpart.methods.utils.bin_encoder import BinEncoder
+from dpart.engines import Independent, PrivBayes, DPsynthpop
 
 
 logger = getLogger("dpart")
 logger.setLevel("WARN")
 
 
-engines = {"PrivBayes": PrivBayes, "dp-synthpop": DPsynthpop, "Independent": Independent}
+engines = {"PrivBayes": PrivBayes,
+           "dp-synthpop": DPsynthpop,
+           "Independent": Independent
+           }
 # Data Settings
 LABEL = "income"
 
 # Classifier Settings
 CLF = LogisticRegression
-SPLIT_SEED = 2021
 
 EPSILONS = np.logspace(-2, 3, 10)
 N_TRAIN = 5
 N_GEN = 5
-RESULTS_PATH = Path(__file__).parent / "results.csv"
+RESULTS_PATH = Path(__file__).parent / "data" / "benchmark_results.csv"
 
 
 def get_data():
