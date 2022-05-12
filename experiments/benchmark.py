@@ -40,9 +40,9 @@ RESULTS_PATH = Path(__file__).parent / "data" / "benchmark_results.csv"
 
 
 def get_data():
-    train_df = pd.read_pickle("data/tiny_adult/tiny_adult.pkl.gz")
-    test_df = pd.read_pickle("data/tiny_adult/tiny_adult_test.pkl.gz")
-    with Path("data/tiny_adult/tiny_adult_bounds.pkl").open("rb") as fr:
+    train_df = pd.read_pickle("data/adult/tiny_adult.pkl.gz")
+    test_df = pd.read_pickle("data/adult/tiny_adult_test.pkl.gz")
+    with Path("data/adult/tiny_adult_bounds.pkl").open("rb") as fr:
         bounds = pickle.load(fr)
     return train_df, test_df, bounds
 

@@ -1,3 +1,4 @@
+import pickle
 import pandas as pd
 from tqdm import tqdm
 from time import time
@@ -5,8 +6,13 @@ from tempfile import TemporaryDirectory
 from DataSynthesizer.DataDescriber import DataDescriber
 from DataSynthesizer.DataGenerator import DataGenerator
 
-from hazy_data import datasets
 from dpart.engines import PrivBayes
+
+
+def get_data():
+    train_df = pd.read_pickle("data/adult/adult.pkl.gz")
+    bounds = None
+    return train_df, bounds
 
 
 def DS_baseline(train_df, bounds, epsilon):
@@ -55,9 +61,7 @@ def DPART_baseline(train_df, bounds, epsilon):
 
 
 if __name__ == "__main__":
-    train_df = datasets["adult"].df
-    bounds = None
-    # train_df, _, bounds = get_data()
+    train_df, bounds = get_data()
     n_exp = 5
     to_test = {"DataSynthesizer": DS_baseline, "DPART": DPART_baseline}
     results = []
