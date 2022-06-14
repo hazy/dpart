@@ -7,6 +7,7 @@ class Independent(dpart):
         self.n_bins = n_bins
         super().__init__(
             epsilon=epsilon,
+            bounds=bounds
         )
 
     def default_method(self, dtype):
