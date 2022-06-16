@@ -50,7 +50,7 @@ class DependencyManager():
         return visit_order, prediction_matrix
 
     def fit(self, df: pd.DataFrame):
-        if self.prediction_matrix == "infer":
+        if self.prediction_matrix == "infer" and self.n_parents != 0:
             self.visit_order, self.prediction_matrix = self.infer_matrix(df)
         else:
             if self.prediction_matrix is not None:
@@ -63,3 +63,14 @@ class DependencyManager():
                     col: self.visit_order[:idx]
                     for idx, col in enumerate(self.visit_order)
                 }
+
+                if self.n_parents == 0:
+                    self.prediction_matrix = {
+                        col: []
+                        for idx, col in enumerate(self.visit_order)
+                    }
+                elif self.n_parents is not None:
+                    self.prediction_matrix = {
+                        col: deps[-self.n_parents:]
+                        for col, deps in self.prediction_matrix.items()
+                    }

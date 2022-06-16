@@ -7,8 +7,9 @@ class Independent(dpart):
         self.n_bins = n_bins
         super().__init__(
             epsilon=epsilon,
-            bounds=bounds
+            bounds=bounds,
+            n_parents=0
         )
 
     def default_method(self, dtype):
-        return ProbabilityTensor(n_parents=0, n_bins=self.n_bins)
+        return ProbabilityTensor(n_bins=self.n_bins)
