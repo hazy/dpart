@@ -2,6 +2,11 @@
 
 ## Abstract
 
+<p align="center">
+  <img src="docs/graphs/image_dpart.png" />
+</p>
+
+
 We propose a general, flexible, and scalable framework `dpart`, an open source Python library for differentially private synthetic data generation.
 
 Central to the approach is autoregressive modelling breaking the joint data distribution to a sequence of lower-dimensional conditional distributions, captured by various methods such as machine learning models (logistic/linear regression, decision trees, etc.), simple histogram counts, or custom techniques.
@@ -157,8 +162,12 @@ In this section, we present three specific instances of **dpart**.
 
 ### `independent`
 
+<p align="center">
+  <img src="docs/graphs/image_independent.png" />
+</p>
+
 This specific use case models all columns independently by using *DP histogram sampler*. The model has also been used as a baseline by [@tao2021benchmarking; @stadler2022synthetic] and while it looks very
-simple and naive, it has been shown that it could perform better than far more sophisticated models. The dependency graph is presented in Fig. [\[fig:2a\]](#fig:2a){reference-type="ref" reference="fig:2a"}. The code excerpt below demonstrates how one could initiate, fit
+simple and naive, it has been shown that it could perform better than far more sophisticated models. The dependency graph is presented in the figure above. The code excerpt below demonstrates how one could initiate, fit
 *Independent*, and generate 1,000 rows for given privacy budget,
 dataset, and dataset bounds:
 
@@ -171,9 +180,13 @@ synth_df = dpart_ind.generate(1000)
 
 ## `PrivBayes`
 
+<p align="center">
+  <img src="docs/graphs/image_privbayes.png" />
+</p>
+
 *PrivBayes* could also be seen as a sub case of *dpart*. We speed up the implementation offered by [@ping2017datasynthesizer] by 20x by
 re-implementing the dependency-inference step. Further performance improvements can be achieved by proposing alternative, more efficient dependency-inference approaches. A possible dependency graph produced by
-*PrivBayes* is shown in [Fig](__LINK__), while a code example could be found below:
+*PrivBayes* is shown in figure above, while a code example could be found below:
 
 ``` python
 from dpart.engines import PrivBayes
@@ -184,7 +197,11 @@ synth_df = dpart_pb.generate(1000)
 
 **dp-synthpop.**
 
-Yet another instance of our framework, alas not DP, is synthpop. We built on top of it and propose a DP version, called *dp-synthpop*. In order to achieve this, we utilize the DP dependency step from our framework (if *visit_order* or *prediction_matrix* is not presented) and the DP predictive models from diffprivlib. A possible dependency graph is visualized in [Fig](__LINK__) and a call to the model is presented below:
+<p align="center">
+  <img src="docs/graphs/image_dpsynthpop.png" />
+</p>
+
+Yet another instance of our framework, alas not DP, is synthpop. We built on top of it and propose a DP version, called *dp-synthpop*. In order to achieve this, we utilize the DP dependency step from our framework (if *visit_order* or *prediction_matrix* is not presented) and the DP predictive models from diffprivlib. A possible dependency graph is visualized in the figure above and a call to the model is presented below:
 
 ``` python
 from dpart.engines import DPsynthpop
