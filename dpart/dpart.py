@@ -84,7 +84,7 @@ class dpart:
                 if col not in self.bounds:
                     if self._epsilon.get("methods", None) is not None:
                         warnings.warn(f"List of categories not sepecified for column '{col}'", PrivacyLeakWarning)
-                    self.bounds[col] = {"categories": list(series.unique())}
+                    self.bounds[col] = {"categories": sorted(list(series.unique()), key=str)}
                 self.encoders[col] = OrdinalEncoder(categories=[self.bounds[col]["categories"]])
             else:
                 t_dtype = "float"
