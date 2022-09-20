@@ -42,8 +42,13 @@ class ClassifierSampler(CategorySampler):
         )
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
+        if np.linalg.norm(X) == 0:
+            data_norm = 1
+        else:
+            data_norm = None 
+
         if self.epsilon is not None:
-            self.clf = self.dp_clf_class(epsilon=self.epsilon, *self.args, **self.kwargs)
+            self.clf = self.dp_clf_class(epsilon=self.epsilon, data_norm=data_norm, *self.args, **self.kwargs)
         else:
             self.clf = self.clf_class(*self.args, **self.kwargs)
         self.clf.fit(X, y)
