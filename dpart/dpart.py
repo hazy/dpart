@@ -41,10 +41,7 @@ class dpart:
                 else:
                     epsilon = {"dependency": 0, "methods": epsilon}
         else:
-            epsilon = {
-                "dependency": None,
-                "methods": defaultdict(lambda: None)
-            }
+            epsilon = {"dependency": None, "methods": {}}
         self._epsilon = epsilon
         self.dep_manager = DependencyManager(
             epsilon=self._epsilon.get("dependency", None),
@@ -112,8 +109,8 @@ class dpart:
         self.columns = df.columns
 
         if not isinstance(self._epsilon["methods"], dict):
-            total_budget = float(self._epsilon["methods"])
-            self._epsilon["methods"] = defaultdict(lambda: total_budget / df.shape[1])
+            col_budget = float(self._epsilon["methods"]) / df.shape[1]
+            self._epsilon["methods"] = {col: col_budget for col in self.columns}
 
         # reorder and introduce initial columns
         self.root = self.root_column(df)
@@ -133,7 +130,7 @@ class dpart:
                 )
                 self.methods[target] = def_method
 
-            if self._epsilon["methods"][target] is not None:
+            if self._epsilon["methods"].get(target, None) is not None:
                 self.methods[target].set_epsilon(self._epsilon["methods"][target])
 
             logger.info(
