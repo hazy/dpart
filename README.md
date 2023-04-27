@@ -39,7 +39,7 @@ from dpart.engines import PrivBayes
 train_df = pd.read_pickle("experiments/data/adult/tiny_adult.pkl.gz")
 
 # Initialise model
-pb_model = Privacy(
+pb_model = PrivBayes(
               epsilon=0.1
           )
 
