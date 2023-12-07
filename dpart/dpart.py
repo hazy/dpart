@@ -80,9 +80,28 @@ class dpart:
                 t_dtype = "category"
                 if col not in self.bounds:
                     if self._epsilon.get("methods", None) is not None:
-                        warnings.warn(f"List of categories not sepecified for column '{col}'", PrivacyLeakWarning)
-                    self.bounds[col] = {"categories": sorted(list(series.unique()), key=str)}
-                self.encoders[col] = OrdinalEncoder(categories=[self.bounds[col]["categories"]])
+                        warnings.warn(
+                            f"List of categories not sepecified for column '{col}'",
+                            PrivacyLeakWarning,
+                        )
+
+                    if (
+                        pd.Series(series.unique())
+                        .apply(
+                            lambda x: isinstance(
+                                x, (np.floating, np.integer, int, float)
+                            )
+                        )
+                        .all()
+                    ):
+                        self.bounds[col] = {"categories": sorted(list(series.unique()))}
+                    else:
+                        self.bounds[col] = {
+                            "categories": sorted(list(series.unique()), key=str)
+                        }
+                self.encoders[col] = OrdinalEncoder(
+                    categories=[self.bounds[col]["categories"]]
+                )
             else:
                 t_dtype = "float"
                 if col not in self.bounds:
