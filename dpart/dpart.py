@@ -92,6 +92,7 @@ class dpart:
                                 x, (np.floating, np.integer, int, float)
                             )
                         )
+                        .astype(bool)
                         .all()
                     ):
                         self.bounds[col] = {"categories": sorted(list(series.unique()))}
