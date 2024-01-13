@@ -30,9 +30,8 @@ class dpart:
         dependency_manager=None,
         visit_order: list = None,
         prediction_matrix: dict = None,
-        n_parents=2
+        n_parents=2,
     ):
-
         # Privact budget
         if epsilon is not None:
             if not isinstance(epsilon, dict):
@@ -47,7 +46,7 @@ class dpart:
             epsilon=self._epsilon.get("dependency", None),
             visit_order=visit_order,
             prediction_matrix=prediction_matrix,
-            n_parents=n_parents
+            n_parents=n_parents,
         )
 
         # method dict
@@ -107,10 +106,19 @@ class dpart:
                 t_dtype = "float"
                 if col not in self.bounds:
                     if self._epsilon.get("methods", None) is not None:
-                        PrivacyLeakWarning(f"upper and lower bounds not specified for column '{col}'")
+                        PrivacyLeakWarning(
+                            f"upper and lower bounds not specified for column '{col}'"
+                        )
                     self.bounds[col] = {"min": series.min(), "max": series.max()}
-                self.encoders[col] = MinMaxScaler(feature_range=[self.bounds[col]["min"], self.bounds[col]["max"]])
-            df[col] = pd.Series(self.encoders[col].fit_transform(df[[col]]).squeeze(), name=col, index=df.index, dtype=t_dtype)
+                self.encoders[col] = MinMaxScaler(
+                    feature_range=[self.bounds[col]["min"], self.bounds[col]["max"]]
+                )
+            df[col] = pd.Series(
+                self.encoders[col].fit_transform(df[[col]]).squeeze(),
+                name=col,
+                index=df.index,
+                dtype=t_dtype,
+            )
 
         return df
 
@@ -143,7 +151,12 @@ class dpart:
             X = t_df[X_columns]
             y = t_df[target]
 
-            if target not in self.methods:
+            if np.unique(y) == 1:
+                warnings.warn(
+                    f"target {target} is static method will default to ProbabilityTensor."
+                )
+                self.methods[target] = self.default_method(self.dtypes[target])
+            elif target not in self.methods:
                 def_method = self.default_method(self.dtypes[target])
                 warnings.warn(
                     f"target {target} has no specified method will use default {def_method.__class__.__name__}"
@@ -193,7 +206,9 @@ class dpart:
 
     @property
     def epsilon(self):
-        budgets = [method.epsilon for _, method in self.methods.items()] + [self.dep_manager.epsilon]
+        budgets = [method.epsilon for _, method in self.methods.items()] + [
+            self.dep_manager.epsilon
+        ]
         if pd.isnull(budgets).any():
             return None
         else:
