@@ -151,7 +151,7 @@ class dpart:
             X = t_df[X_columns]
             y = t_df[target]
 
-            if np.unique(y) == 1:
+            if y.nunique() == 1:
                 warnings.warn(
                     f"target {target} is static method will default to ProbabilityTensor."
                 )
