@@ -151,11 +151,11 @@ class dpart:
             X = t_df[X_columns]
             y = t_df[target]
 
-            if y.nunique() == 1:
+            if y.nunique() < 2:
                 warnings.warn(
                     f"target {target} is static method will default to ProbabilityTensor."
                 )
-                self.methods[target] = self.default_method(self.dtypes[target])
+                self.methods[target] = ProbabilityTensor()
             elif target not in self.methods:
                 def_method = self.default_method(self.dtypes[target])
                 warnings.warn(
